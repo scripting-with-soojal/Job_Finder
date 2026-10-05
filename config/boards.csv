@@ -1,0 +1,4 @@
+company,type,identifier,active
+Stripe,greenhouse,stripe,true
+Airbnb,greenhouse,airbnb,true
+Databricks,greenhouse,databricks,true
