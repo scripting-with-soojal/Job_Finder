@@ -1,6 +1,6 @@
 # Job Finder
 
-A Python CLI that aggregates job postings from the **Adzuna API** and **Greenhouse** company career boards into one clean, deduplicated CSV. For each posting it extracts the required years of experience and tags the tech stack mentioned (Python, SQL, Airflow, Snowflake, ...), so you can filter hundreds of listings in seconds.
+A Python CLI that aggregates job postings from the **Adzuna API** and **Greenhouse** company career boards into one clean, deduplicated CSV or Excel workbook. For each posting it extracts the required years of experience and tags the tech stack mentioned (Python, SQL, Airflow, Snowflake, ...), so you can filter hundreds of listings in seconds.
 
 Originally built as a Google Apps Script + Google Sheets tool; rewritten in Python as a testable, configurable package.
 
@@ -25,7 +25,7 @@ job_finder/
     adzuna.py     paginated Adzuna fetcher
     greenhouse.py Greenhouse board fetcher + title filter
   processing.py   dedupe, experience + keyword extraction, HTML cleanup
-  storage.py      CSV writers (jobs + run logs)
+  storage.py      CSV/XLSX job writers and CSV run-log writer
   http.py         requests session with retry/backoff
   models.py       Job and RunLog dataclasses
 config/boards.csv company boards to scan
@@ -48,6 +48,7 @@ Get free Adzuna credentials at https://developer.adzuna.com/.
 ```bash
 python -m job_finder --role "data engineer" --country in
 python -m job_finder --role "data engineer" --country gb --max-pages 3 --out output/uk.csv
+python -m job_finder --role "data engineer" --country in --out output/jobs.xlsx
 ```
 
 | Option | Description |
@@ -56,7 +57,8 @@ python -m job_finder --role "data engineer" --country gb --max-pages 3 --out out
 | `--country` | Adzuna country code, e.g. `in`, `gb`, `us` |
 | `--boards` | Path to boards CSV (default `config/boards.csv`) |
 | `--max-pages` | Max Adzuna pages, 50 jobs each (default 10) |
-| `--out` / `--log` | Output paths (default `output/jobs.csv`, `output/job_run_logs.csv`) |
+| `--out` | Job output path ending in `.csv` or `.xlsx` (default `output/jobs.csv`) |
+| `--log` | Run-log CSV path (default `output/job_run_logs.csv`) |
 
 **Output columns:** Source, Company, Job Title, Location, Experience Required, Salary Min, Salary Max, Apply URL, Posted Date, Keywords.
 
@@ -68,7 +70,7 @@ To add a company, append a row to `config/boards.csv`. The identifier is the tok
 python -m unittest discover -v
 ```
 
-HTTP is mocked, so tests run offline. They cover pagination stopping, failure isolation, missing credentials, inactive boards, HTML cleanup, deduplication, and a full CLI run that checks the CSV output.
+HTTP is mocked, so tests run offline. They cover pagination stopping, failure isolation, missing credentials, inactive boards, HTML cleanup, deduplication, and full CLI runs that check CSV and XLSX output.
 
 ## Design notes
 

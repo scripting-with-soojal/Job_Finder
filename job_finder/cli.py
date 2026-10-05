@@ -5,7 +5,7 @@ import os
 
 from job_finder import __version__
 from job_finder.pipeline import run_pipeline
-from job_finder.storage import append_run_logs, write_jobs_csv
+from job_finder.storage import append_run_logs, write_jobs
 
 try:  # optional: load keys from a local .env file
     from dotenv import load_dotenv
@@ -58,7 +58,7 @@ def main(argv=None) -> int:
         adzuna_key=os.environ.get("ADZUNA_APP_KEY"),
         max_pages=args.max_pages,
     )
-    write_jobs_csv(args.out, jobs)
+    write_jobs(args.out, jobs)
     append_run_logs(args.log, logs)
 
     for r in logs:

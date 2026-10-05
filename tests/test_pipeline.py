@@ -3,6 +3,8 @@ import os
 import tempfile
 import unittest
 
+from openpyxl import load_workbook
+
 from job_finder.cli import load_boards, main
 from job_finder.pipeline import run_pipeline
 from job_finder.sources import adzuna, greenhouse
@@ -127,6 +129,37 @@ class TestCli(unittest.TestCase):
         self.assertEqual(by_src["Adzuna"]["Keywords"], "Python, SQL, Airflow")
         self.assertEqual(by_src["Greenhouse"]["Keywords"], "Snowflake")
         self.assertEqual(len(logs), 2)
+
+    def test_end_to_end_xlsx_output(self):
+        import job_finder.pipeline as pl
+        s = FakeSession({"adzuna": FakeResponse(ADZUNA_PAGE), "greenhouse": FakeResponse(GREENHOUSE)})
+        orig = pl.build_session
+        pl.build_session = lambda *a, **k: s
+        orig_delay = adzuna.time.sleep
+        adzuna.time.sleep = lambda *_: None
+        os.environ["ADZUNA_APP_ID"], os.environ["ADZUNA_APP_KEY"] = "id", "key"
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                boards = os.path.join(d, "b.csv")
+                with open(boards, "w") as f:
+                    f.write("company,type,identifier,active\nStripe,greenhouse,stripe,true\n")
+                out, log = os.path.join(d, "o", "jobs.xlsx"), os.path.join(d, "o", "logs.csv")
+                main(["--role", "data engineer", "--country", "in", "--boards", boards,
+                      "--max-pages", "1", "--out", out, "--log", log])
+                workbook = load_workbook(out, read_only=True)
+                try:
+                    rows = list(workbook["Jobs"].iter_rows(values_only=True))
+                finally:
+                    workbook.close()
+        finally:
+            pl.build_session = orig
+            adzuna.time.sleep = orig_delay
+        self.assertEqual(rows[0][0], "Source")
+        self.assertEqual(len(rows), 3)
+        by_src = {row[0]: row for row in rows[1:]}
+        self.assertEqual(by_src["Adzuna"][4], "3-5 Years")
+        self.assertEqual(by_src["Adzuna"][9], "Python, SQL, Airflow")
+        self.assertEqual(by_src["Greenhouse"][9], "Snowflake")
 
 
 if __name__ == "__main__":
